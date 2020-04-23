@@ -7,6 +7,6 @@ Authors (USP Number):
 ---------------
 
 Folders and Files:
-* [Python Code](submission.py) contains the Python code used for the run.codes submission
-* [Images](example_images/) contains the images used in the examples
-* [Notebook with Examples](example_notebook.ipynb) is a notebook exemplifying functions developed and submitted
+* [submission.py](submission.py) contains the Python code used for the run.codes submission
+* [example_images](example_images/) contains the images used in the examples
+* [example_notebook.ipynb](example_notebook.ipynb) is a notebook exemplifying functions developed and submitted
