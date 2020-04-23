@@ -3,7 +3,7 @@ Name: Eduardo Santos Carlos de Souza
 USP Number: 9293481
 Course: SCC0251/SCC5830 - Image Processing - 1st Semester of 2020
 
-Assignment X: AAA
+Assignment 2: Image Enhancement and Filtering
 '''
 
 
@@ -11,6 +11,17 @@ Assignment X: AAA
 #Lib imports
 import numpy as np
 from imageio import imread, imwrite
+
+
+
+def bilateral(img, fil_size, sig_s, sig_rd):
+    pass
+
+def unsharp(img, c, ker):
+    pass
+
+def vignette(img, sig_row, sig_col):
+    pass
 
 
 
@@ -24,10 +35,24 @@ def rse(anchor, compare):
 if __name__ ==  '__main__':
     #Reading input parameters
     img_filename = str(input()).rstrip()
+    method = int(input())
     save = bool(int(input()))
+    if method == 1:
+        fil_size, sig_s, sig_rd = int(input()), float(input()), float(input())
+    if method == 2:
+        c, ker = float(input()), int(input())
+    if method == 3:
+        sig_row, sig_col = float(input()), float(input())
 
     #Read the image and convert to float for the mathematical operations
     img = imread(img_filename).astype(np.float64)
+    #Apply the specified method
+    if method == 1:
+        res_img = bilateral(img, fil_size, sig_s, sig_rd)
+    elif method == 2:
+        res_img = unsharp(img, c, ker)
+    else:
+        res_img = vignette(img, sig_row, sig_col)
 
     #Save if necessary
     if save:
