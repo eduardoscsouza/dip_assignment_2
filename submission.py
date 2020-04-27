@@ -11,11 +11,29 @@ Assignment 2: Image Enhancement and Filtering
 #Lib imports
 import numpy as np
 from imageio import imread, imwrite
+from itertools import product
+
+
+
+def conv_2d(img, fil, pad=True, pad_mode='constant', **pad_kwargs):
+    orig_shape = img.shape
+    pad_shape = (((fil.shape[0]-1)//2, fil.shape[0]//2), ((fil.shape[1]-1)//2, fil.shape[1]//2)) if pad else ((0, 0), (0, 0))
+    img = np.pad(img, pad_shape, mode=pad_mode, **pad_kwargs)
+
+    slices_centers = [(i, j) for i, j in product(range(pad_shape[0][0], pad_shape[0][0]+orig_shape[0]), range(pad_shape[1][0], pad_shape[1][0]+orig_shape[1]))]
+    slices = np.stack([img[i-pad_shape[0][0]:i+pad_shape[0][1]+1, j-pad_shape[1][0]:j+pad_shape[1][1]+1].flatten() for i, j in slices_centers])
+    img = np.matmul(slices, fil.flatten()).reshape(orig_shape)
+    return img
 
 
 
 def bilateral(img, fil_size, sig_s, sig_rd):
-    pass
+    start, finish = -((fil_size-1)//2), (fil_size//2)
+    points = np.stack([(i, j) for i, j in product(range(start, finish+1), range(start, finish+1))]).reshape((fil_size, fil_size, 2))
+    dists = np.linalg.norm(points, axis=2)
+    gauss = np.exp(-(dists**2) / (2*sig_s**2)) /  (2*np.pi*sig_s**2)
+    
+    print(dists)
 
 def unsharp(img, c, ker):
     pass
@@ -33,6 +51,8 @@ def rse(anchor, compare):
 
 #Main Function
 if __name__ ==  '__main__':
+    bilateral(None, 5, 3, 3)
+    '''
     #Reading input parameters
     img_filename = str(input()).rstrip()
     method = int(input())
@@ -60,3 +80,4 @@ if __name__ ==  '__main__':
 
     #Print the RSE
     print("%.4f" % rse(res_img, img))
+    '''
