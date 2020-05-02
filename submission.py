@@ -49,7 +49,7 @@ def conv_2d(img, fil, pad=True, pad_mode='constant', **pad_kwargs):
     #Get the neighborhoods of each pixel, and the resulting image shape
     slices, res_shape = __get_neighs__(img, fil.shape, pad, pad_mode, **pad_kwargs)
     #Changes in shape for easier numpy calculations
-    fil = fil.flatten()
+    fil = fil.flatten()[:, np.newaxis]
     #Calculate the convolution through a matrix multiplication, and reshape to the resulting image size
     img = np.matmul(slices, fil).reshape(res_shape)
 
