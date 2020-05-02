@@ -1,4 +1,4 @@
-# DIP Assignment X: AAA
+# DIP Assignment 2: Image Enhancement and Filtering
 ### SCC0251/SCC5830 - Image Processing - 1st Semester of 2020
 
 Authors (USP Number):
