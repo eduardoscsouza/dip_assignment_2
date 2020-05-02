@@ -14,6 +14,7 @@ from imageio import imread, imwrite
 
 
 
+#Function to extract the neighborhood with the shape of the filter for each pixel
 def __get_neighs__(img, fil_shape, pad=True, pad_mode='constant', **pad_kwargs):
     #Calculate how many pixels the convolution considers in regards to the central pixel in all 4 directions
     conv_borders = (((fil_shape[0]-1)//2, fil_shape[0]//2), ((fil_shape[1]-1)//2, fil_shape[1]//2))
@@ -41,10 +42,12 @@ def __get_neighs__(img, fil_shape, pad=True, pad_mode='constant', **pad_kwargs):
 
     #For each central pixel of the convolution operation, take a slice of the image with all the convolution area for that pixel
     slices = [img[i-conv_borders[0][0]:i+conv_borders[0][1]+1, j-conv_borders[1][0]:j+conv_borders[1][1]+1].flatten() for i, j in slices_centers]
+    #Stack the list of slices into a ndarray
     slices = np.stack(slices)
 
     return slices, res_shape
 
+#Function to execute a 2D convolution
 def conv_2d(img, fil, pad=True, pad_mode='constant', **pad_kwargs):
     #Get the neighborhoods of each pixel, and the resulting image shape
     slices, res_shape = __get_neighs__(img, fil.shape, pad, pad_mode, **pad_kwargs)
@@ -57,20 +60,29 @@ def conv_2d(img, fil, pad=True, pad_mode='constant', **pad_kwargs):
 
 
 
+#Function to calculate the gaussian kernels
 def __get_gauss__(vals, sig):
     return np.exp(-(vals**2) / (2*sig**2)) /  (2*np.pi*sig**2)
 
+#Function to execute the bilateral filter
 def bilateral(img, fil_size, sig_s, sig_r):
+    #Calculate the spatial gaussian
+    #Get an array with the coordinates of each point for the gaussian function
     center_pix_idx = (fil_size-1)//2
-    points_start = (-center_pix_idx, -center_pix_idx)
-    points_start = np.asarray(points_start)[:, np.newaxis, np.newaxis]
+    points_start = np.asarray((-center_pix_idx, -center_pix_idx))[:, np.newaxis, np.newaxis]
     points = np.indices((fil_size, fil_size)) + points_start
+    #Get the euclidian distance, apply the gaussian function, and flatten for easier calculations
     spat_gauss = __get_gauss__(np.linalg.norm(points, axis=0), sig_s).flatten()
 
+    #Calculate the gaussian kernel
+    #Update center_pix_idx for the flattened array
     center_pix_idx = (center_pix_idx * fil_size) + center_pix_idx
+    #Get the neighborhoods of each pixel, and the resulting image shape
     neighs, res_shape = __get_neighs__(img, (fil_size, fil_size))
+    #Calculate the gaussian function on each neighborhood, with the center subtracted
     kern_gauss = __get_gauss__(neighs - neighs[:, center_pix_idx][:, np.newaxis], sig_r)
 
+    #Calculate the bilateral filter
     weights = kern_gauss * spat_gauss
     img = np.sum(weights * neighs, axis=1) / np.sum(weights, axis=1)
 
@@ -78,11 +90,14 @@ def bilateral(img, fil_size, sig_s, sig_r):
 
 
 
+#Function to set the range of the pixels between 0 and 255
 def __normalize__(img):
     img = (img - np.min(img)) * (255.0 / np.max(img))
     return img
 
+#Function to execute the unsharp filter
 def unsharp(img, c, ker):
+    #Get the chosen filter
     if ker == 1:
         fil = np.ones((3, 3)) * -1
         fil[0, 0] = fil[0, 2] = fil[2, 0] = fil[2, 2] = 0
@@ -91,17 +106,24 @@ def unsharp(img, c, ker):
         fil = np.ones((3, 3)) * -1
         fil[1, 1] = 8
 
+    #Apply the convolution and normalize
     res_img = __normalize__(conv_2d(img, fil))
+    #Add the original image and normalize
     res_img = __normalize__(c*(res_img) + img)
 
     return res_img
 
 
 
+#Function to execute the vignette filter
 def vignette(img, sig_row, sig_col):
+    #Get the gaussian kernel for the rows, and change shape for future calculations
     row_gauss = __get_gauss__(np.arange(-((img.shape[0]-1)//2), (img.shape[0]//2)+1), sig_row)[:, np.newaxis]
+    #Get the gaussian kernel for the columns, and change shape for future calculations
     col_gauss = __get_gauss__(np.arange(-((img.shape[1]-1)//2), (img.shape[1]//2)+1), sig_col)[np.newaxis, :]
+    #Get the weight matrix through matrix multiplication
     weights = np.matmul(row_gauss, col_gauss)
+    #Calculate the point-wise multiplication and normalize
     img = __normalize__(img * weights)
 
     return img
