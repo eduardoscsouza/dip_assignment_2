@@ -92,8 +92,7 @@ def unsharp(img, c, ker):
         fil = np.ones((3, 3)) * -1
         fil[1, 1] = 8
 
-    res_img, res_shape = conv_2d(img, fil)
-    res_img = __normalize__(res_img.reshape(res_shape))
+    res_img = __normalize__(conv_2d(img, fil))
     res_img = __normalize__(c*(res_img) + img)
 
     return res_img
