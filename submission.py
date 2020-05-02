@@ -99,10 +99,10 @@ def unsharp(img, c, ker):
 
 
 def vignette(img, sig_row, sig_col):
-    row_gauss = __get_gauss__(np.arange(-((img.shape[0]-1)//2), (img.shape[0]//2)+1), sig_row)
-    col_gauss = __get_gauss__(np.arange(-((img.shape[0]-1)//2), (img.shape[0]//2)+1), sig_col)
-    weights = np.matmul(row_gauss, col_gauss.transpose())
-    img = __normalize__(img*weights)
+    row_gauss = np.expand_dims(__get_gauss__(np.arange(-((img.shape[0]-1)//2), (img.shape[0]//2)+1), sig_row), axis=1)
+    col_gauss = np.expand_dims(__get_gauss__(np.arange(-((img.shape[1]-1)//2), (img.shape[1]//2)+1), sig_col), axis=0)
+    weights = np.matmul(row_gauss, col_gauss)
+    img = __normalize__(img * weights)
 
     return img
 
