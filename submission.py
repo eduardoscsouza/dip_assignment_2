@@ -11,7 +11,6 @@ Assignment 2: Image Enhancement and Filtering
 #Lib imports
 import numpy as np
 from imageio import imread, imwrite
-from itertools import product
 
 
 
@@ -51,10 +50,11 @@ def conv_2d(img, fil, pad=True, pad_mode='constant', **pad_kwargs):
 
 
 
-def bilateral(img, fil_size, sig_s, sig_rd):
-    start, finish = -((fil_size-1)//2), (fil_size//2)
-    points = np.stack([(i, j) for i, j in product(range(start, finish+1), range(start, finish+1))]).reshape((fil_size, fil_size, 2))
-    dists = np.linalg.norm(points, axis=2)
+def bilateral(img, fil_size, sig_s, sig_r):
+    points_start = (-((fil_size-1)//2), -((fil_size-1)//2))
+    points_start = np.expand_dims(np.asarray(points_start), axis=(1, 2))
+    points = np.indices((fil_size, fil_size)) + points_start
+    dists = np.linalg.norm(points, axis=0)
     gauss = np.exp(-(dists**2) / (2*sig_s**2)) /  (2*np.pi*sig_s**2)
     
     print(dists)
@@ -75,27 +75,22 @@ def rse(anchor, compare):
 
 #Main Function
 if __name__ ==  '__main__':
-    bilateral(None, 5, 3, 3)
-    '''
     #Reading input parameters
     img_filename = str(input()).rstrip()
     method = int(input())
     save = bool(int(input()))
-    if method == 1:
-        fil_size, sig_s, sig_rd = int(input()), float(input()), float(input())
-    if method == 2:
-        c, ker = float(input()), int(input())
-    if method == 3:
-        sig_row, sig_col = float(input()), float(input())
 
     #Read the image and convert to float for the mathematical operations
     img = imread(img_filename).astype(np.float64)
-    #Apply the specified method
+    #Read extra inputs and apply the specified method
     if method == 1:
-        res_img = bilateral(img, fil_size, sig_s, sig_rd)
+        fil_size, sig_s, sig_r = int(input()), float(input()), float(input())
+        res_img = bilateral(img, fil_size, sig_s, sig_r)
     elif method == 2:
+        c, ker = float(input()), int(input())
         res_img = unsharp(img, c, ker)
     else:
+        sig_row, sig_col = float(input()), float(input())
         res_img = vignette(img, sig_row, sig_col)
 
     #Save if necessary
@@ -104,4 +99,3 @@ if __name__ ==  '__main__':
 
     #Print the RSE
     print("%.4f" % rse(res_img, img))
-    '''
