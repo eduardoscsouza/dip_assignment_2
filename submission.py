@@ -33,7 +33,7 @@ def __get_neighs__(img, fil_shape, pad=True, pad_mode='constant', **pad_kwargs):
     conv_area_size = (img.shape[0]-conv_borders_loss[0], img.shape[1]-conv_borders_loss[1])
     #Calculate the indexes of the first pixels on wich the convolution will be applied, in each dimension,
     #and change to a ndarray of specific shape for easier calculations
-    conv_area_begin = np.expand_dims(np.asarray((conv_borders[0][0], conv_borders[1][0])), axis=(1, 2))
+    conv_area_begin = np.asarray((conv_borders[0][0], conv_borders[1][0]))[:, np.newaxis, np.newaxis]
     #Calculate the indexes of the pixels on which the convolution will be applied
     slices_centers = np.indices(conv_area_size) + conv_area_begin
     #Change in shape so the variable is effectively a list of pairs of indexes
@@ -63,13 +63,13 @@ def __get_gauss__(vals, sig):
 def bilateral(img, fil_size, sig_s, sig_r):
     center_pix_idx = (fil_size-1)//2
     points_start = (-center_pix_idx, -center_pix_idx)
-    points_start = np.expand_dims(np.asarray(points_start), axis=(1, 2))
+    points_start = np.asarray(points_start)[:, np.newaxis, np.newaxis]
     points = np.indices((fil_size, fil_size)) + points_start
     spat_gauss = __get_gauss__(np.linalg.norm(points, axis=0), sig_s).flatten()
 
     center_pix_idx = (center_pix_idx * fil_size) + center_pix_idx
     neighs, res_shape = __get_neighs__(img, (fil_size, fil_size))
-    kern_gauss = __get_gauss__(neighs - np.expand_dims(neighs[:, center_pix_idx], axis=1), sig_r)
+    kern_gauss = __get_gauss__(neighs - neighs[:, center_pix_idx][:, np.newaxis], sig_r)
 
     weights = kern_gauss * spat_gauss
     img = np.sum(weights * neighs, axis=1) / np.sum(weights, axis=1)
@@ -99,8 +99,8 @@ def unsharp(img, c, ker):
 
 
 def vignette(img, sig_row, sig_col):
-    row_gauss = np.expand_dims(__get_gauss__(np.arange(-((img.shape[0]-1)//2), (img.shape[0]//2)+1), sig_row), axis=1)
-    col_gauss = np.expand_dims(__get_gauss__(np.arange(-((img.shape[1]-1)//2), (img.shape[1]//2)+1), sig_col), axis=0)
+    row_gauss = __get_gauss__(np.arange(-((img.shape[0]-1)//2), (img.shape[0]//2)+1), sig_row)[:, np.newaxis]
+    col_gauss = __get_gauss__(np.arange(-((img.shape[1]-1)//2), (img.shape[1]//2)+1), sig_col)[np.newaxis, :]
     weights = np.matmul(row_gauss, col_gauss)
     img = __normalize__(img * weights)
 
