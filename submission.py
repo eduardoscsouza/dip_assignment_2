@@ -76,11 +76,37 @@ def bilateral(img, fil_size, sig_s, sig_r):
 
     return img.reshape(res_shape)
 
+
+
+def __normalize__(img):
+    img -= np.min(img)
+    img *= 255.0 / np.max(img)
+    return img
+
 def unsharp(img, c, ker):
-    pass
+    if ker == 1:
+        fil = np.ones((3, 3)) * -1
+        fil[0, 0] = fil[0, 2] = fil[2, 0] = fil[2, 2] = 0
+        fil[1, 1] = 4
+    else:
+        fil = np.ones((3, 3)) * -1
+        fil[1, 1] = 8
+
+    res_img, res_shape = conv_2d(img, fil)
+    res_img = __normalize__(res_img.reshape(res_shape))
+    res_img = __normalize__(c*(res_img) + img)
+
+    return res_img
+
+
 
 def vignette(img, sig_row, sig_col):
-    pass
+    row_gauss = __get_gauss__(np.arange(-((img.shape[0]-1)//2), (img.shape[0]//2)+1), sig_row)
+    col_gauss = __get_gauss__(np.arange(-((img.shape[0]-1)//2), (img.shape[0]//2)+1), sig_col)
+    weights = np.matmul(row_gauss, col_gauss.transpose())
+    img = __normalize__(img*weights)
+
+    return img
 
 
 
@@ -92,8 +118,6 @@ def rse(anchor, compare):
 
 #Main Function
 if __name__ ==  '__main__':
-    bilateral(imread("example_images/arara.png").astype(np.float64), 3, 2, 2)
-    '''
     #Reading input parameters
     img_filename = str(input()).rstrip()
     method = int(input())
@@ -118,4 +142,3 @@ if __name__ ==  '__main__':
 
     #Print the RSE
     print("%.4f" % rse(res_img, img))
-    '''
