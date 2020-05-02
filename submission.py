@@ -79,8 +79,7 @@ def bilateral(img, fil_size, sig_s, sig_r):
 
 
 def __normalize__(img):
-    img -= np.min(img)
-    img *= 255.0 / np.max(img)
+    img = (img - np.min(img)) * (255.0 / np.max(img))
     return img
 
 def unsharp(img, c, ker):
