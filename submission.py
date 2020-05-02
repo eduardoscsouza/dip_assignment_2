@@ -14,9 +14,9 @@ from imageio import imread, imwrite
 
 
 
-def conv_2d(img, fil, pad=True, pad_mode='constant', **pad_kwargs):
+def __get_neighs__(img, fil_shape, pad=True, pad_mode='constant', **pad_kwargs):
     #Calculate how many pixels the convolution considers in regards to the central pixel in all 4 directions
-    conv_borders = (((fil.shape[0]-1)//2, fil.shape[0]//2), ((fil.shape[1]-1)//2, fil.shape[1]//2))
+    conv_borders = (((fil_shape[0]-1)//2, fil_shape[0]//2), ((fil_shape[1]-1)//2, fil_shape[1]//2))
     #Calculate how many pixels are not applicable at the edges of the image
     conv_borders_loss = (conv_borders[0][0]+conv_borders[0][1], conv_borders[1][0]+conv_borders[1][1])
 
@@ -41,8 +41,15 @@ def conv_2d(img, fil, pad=True, pad_mode='constant', **pad_kwargs):
 
     #For each central pixel of the convolution operation, take a slice of the image with all the convolution area for that pixel
     slices = [img[i-conv_borders[0][0]:i+conv_borders[0][1]+1, j-conv_borders[1][0]:j+conv_borders[1][1]+1].flatten() for i, j in slices_centers]
-    #Changes in shape and data type for easier numpy calculations
-    slices, fil = np.stack(slices), fil.flatten()
+    slices = np.stack(slices)
+
+    return slices, res_shape
+
+def conv_2d(img, fil, pad=True, pad_mode='constant', **pad_kwargs):
+    #Get the neighborhoods of each pixel, and the resulting image shape
+    slices, res_shape = __get_neighs__(img, fil.shape, pad, pad_mode, **pad_kwargs)
+    #Changes in shape for easier numpy calculations
+    fil = fil.flatten()
     #Calculate the convolution through a matrix multiplication, and reshape to the resulting image size
     img = np.matmul(slices, fil).reshape(res_shape)
 
@@ -50,14 +57,24 @@ def conv_2d(img, fil, pad=True, pad_mode='constant', **pad_kwargs):
 
 
 
+def __get_gauss__(vals, sig):
+    return np.exp(-(vals**2) / (2*sig**2)) /  (2*np.pi*sig**2)
+
 def bilateral(img, fil_size, sig_s, sig_r):
-    points_start = (-((fil_size-1)//2), -((fil_size-1)//2))
+    center_pix_idx = (fil_size-1)//2
+    points_start = (-center_pix_idx, -center_pix_idx)
     points_start = np.expand_dims(np.asarray(points_start), axis=(1, 2))
     points = np.indices((fil_size, fil_size)) + points_start
-    dists = np.linalg.norm(points, axis=0)
-    gauss = np.exp(-(dists**2) / (2*sig_s**2)) /  (2*np.pi*sig_s**2)
-    
-    print(dists)
+    spat_gauss = __get_gauss__(np.linalg.norm(points, axis=0), sig_s).flatten()
+
+    center_pix_idx = (center_pix_idx * fil_size) + center_pix_idx
+    neighs, res_shape = __get_neighs__(img, (fil_size, fil_size))
+    kern_gauss = __get_gauss__(neighs - np.expand_dims(neighs[:, center_pix_idx], axis=1), sig_r)
+
+    weights = kern_gauss * spat_gauss
+    img = np.sum(weights * neighs, axis=1) / np.sum(weights, axis=1)
+
+    return img.reshape(res_shape)
 
 def unsharp(img, c, ker):
     pass
@@ -75,6 +92,8 @@ def rse(anchor, compare):
 
 #Main Function
 if __name__ ==  '__main__':
+    bilateral(imread("example_images/arara.png").astype(np.float64), 3, 2, 2)
+    '''
     #Reading input parameters
     img_filename = str(input()).rstrip()
     method = int(input())
@@ -99,3 +118,4 @@ if __name__ ==  '__main__':
 
     #Print the RSE
     print("%.4f" % rse(res_img, img))
+    '''
