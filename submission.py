@@ -16,13 +16,37 @@ from itertools import product
 
 
 def conv_2d(img, fil, pad=True, pad_mode='constant', **pad_kwargs):
-    orig_shape = img.shape
-    pad_shape = (((fil.shape[0]-1)//2, fil.shape[0]//2), ((fil.shape[1]-1)//2, fil.shape[1]//2)) if pad else ((0, 0), (0, 0))
-    img = np.pad(img, pad_shape, mode=pad_mode, **pad_kwargs)
+    #Calculate how many pixels the convolution considers in regards to the central pixel in all 4 directions
+    conv_borders = (((fil.shape[0]-1)//2, fil.shape[0]//2), ((fil.shape[1]-1)//2, fil.shape[1]//2))
+    #Calculate how many pixels are not applicable at the edges of the image
+    conv_borders_loss = (conv_borders[0][0]+conv_borders[0][1], conv_borders[1][0]+conv_borders[1][1])
 
-    slices_centers = [(i, j) for i, j in product(range(pad_shape[0][0], pad_shape[0][0]+orig_shape[0]), range(pad_shape[1][0], pad_shape[1][0]+orig_shape[1]))]
-    slices = np.stack([img[i-pad_shape[0][0]:i+pad_shape[0][1]+1, j-pad_shape[1][0]:j+pad_shape[1][1]+1].flatten() for i, j in slices_centers])
-    img = np.matmul(slices, fil.flatten()).reshape(orig_shape)
+    if pad:
+        #Stores the unaltered resulting shape for the final image
+        res_shape = img.shape
+        #Pads the image with exactly the necessary number of pixels
+        img = np.pad(img, conv_borders, mode=pad_mode, **pad_kwargs)
+    else:
+        #Stores the reduced resulting shape for the final image
+        res_shape = (img.shape[0]-conv_borders_loss[0], img.shape[1]-conv_borders_loss[1])
+
+    #Calculate on how many pixels the convolution will be applied, in each dimension
+    conv_area_size = (img.shape[0]-conv_borders_loss[0], img.shape[1]-conv_borders_loss[1])
+    #Calculate the indexes of the first pixels on wich the convolution will be applied, in each dimension,
+    #and change to a ndarray of specific shape for easier calculations
+    conv_area_begin = np.expand_dims(np.asarray((conv_borders[0][0], conv_borders[1][0])), axis=(1, 2))
+    #Calculate the indexes of the pixels on which the convolution will be applied
+    slices_centers = np.indices(conv_area_size) + conv_area_begin
+    #Change in shape so the variable is effectively a list of pairs of indexes
+    slices_centers = slices_centers.reshape(slices_centers.shape[0], slices_centers.shape[1] * slices_centers.shape[2]).transpose()
+
+    #For each central pixel of the convolution operation, take a slice of the image with all the convolution area for that pixel
+    slices = [img[i-conv_borders[0][0]:i+conv_borders[0][1]+1, j-conv_borders[1][0]:j+conv_borders[1][1]+1].flatten() for i, j in slices_centers]
+    #Changes in shape and data type for easier numpy calculations
+    slices, fil = np.stack(slices), fil.flatten()
+    #Calculate the convolution through a matrix multiplication, and reshape to the resulting image size
+    img = np.matmul(slices, fil).reshape(res_shape)
+
     return img
 
 
