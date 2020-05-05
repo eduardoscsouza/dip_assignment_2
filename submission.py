@@ -4,6 +4,7 @@ USP Number: 9293481
 Course: SCC0251/SCC5830 - Image Processing - 1st Semester of 2020
 
 Assignment 2: Image Enhancement and Filtering
+Git Repository: https://github.com/eduardoscsouza/dip_assignment_2
 '''
 
 
@@ -92,7 +93,8 @@ def bilateral(img, fil_size, sig_s, sig_r):
 
 #Function to set the range of the pixels between 0 and 255
 def __normalize__(img):
-    img = (img - np.min(img)) * (255.0 / np.max(img))
+    img_min, img_max = np.min(img), np.max(img)
+    img = (img - img_min) * (255.0 / (img_max - img_min))
     return img
 
 #Function to execute the unsharp filter
